@@ -66,15 +66,17 @@ function getAllItems() {
   var data = sheet.getRange(2, 1, last - 1, 12).getValues();
   var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
   return data.map(function(r, i) {
-    var status = r[4];  // 貸出状況（シートの値）
+    var status;
     // 貸出日が入っている場合、日付に応じて自動判定
-    if (status !== '貸出可能' && r[7]) {
+    if (r[7]) {
       var lendStr = formatDate(r[7]);
       if (lendStr > today) {
         status = '貸出予定';
       } else {
         status = '貸出中';
       }
+    } else {
+      status = '貸出可能';
     }
     return {
       row: i + 2,
