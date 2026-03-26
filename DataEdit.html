@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; }
+  .header { background: #4a90d9; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 18px; }
+  .header a { color: #fff; text-decoration: none; font-size: 14px; }
+  .container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
+  .tabs { display: flex; gap: 0; margin-bottom: 0; }
+  .tab { padding: 12px 24px; background: #e0e0e0; border: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #555; border-radius: 8px 8px 0 0; }
+  .tab.active { background: #fff; color: #4a90d9; }
+  .tab-content { background: #fff; border-radius: 0 8px 8px 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 24px; display: none; }
+  .tab-content.active { display: block; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; font-weight: 600; }
+  .form-group input, .form-group select { width: 100%; max-width: 350px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+  .form-group input:focus, .form-group select:focus { border-color: #4a90d9; }
+  .btn { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin: 4px 2px; }
+  .btn-primary { background: #4a90d9; color: #fff; }
+  .btn-primary:hover { background: #3a7bc8; }
+  .btn-danger { background: #d9534f; color: #fff; }
+  .btn-danger:hover { background: #c9302c; }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+  .msg { font-size: 13px; margin-top: 8px; padding: 8px 12px; border-radius: 6px; display: none; }
+  .msg-success { background: #dff0d8; color: #3c763d; }
+  .msg-error { background: #f2dede; color: #a94442; }
+  .table-wrap { overflow-x: auto; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
+  th { background: #4a90d9; color: #fff; padding: 10px 8px; white-space: nowrap; }
+  td { padding: 8px; border-bottom: 1px solid #eee; white-space: nowrap; }
+  tr:hover { background: #f8f9fb; }
+  .loading { text-align: center; padding: 24px; color: #999; }
+
+  /* モーダル */
+  .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+  .overlay.active { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 28px 24px; width: 90%; max-width: 450px; }
+  .modal h3 { font-size: 16px; margin-bottom: 16px; }
+  .modal .form-group input { max-width: 100%; }
+  .modal-buttons { margin-top: 20px; display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>レンタル品データ編集</h1>
+    <a href="#" id="linkHome">ホーム</a>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('add')">追加</button>
+      <button class="tab" onclick="switchTab('delete')">削除</button>
+      <button class="tab" onclick="switchTab('edit')">編集</button>
+    </div>
+
+    <!-- 追加タブ -->
+    <div class="tab-content active" id="tab-add">
+      <div class="form-group"><label>項目</label><input id="addItem" placeholder="例: テーブル" /></div>
+      <div class="form-group"><label>品名</label><input id="addProduct" placeholder="例: ダイニング" /></div>
+      <div class="form-group"><label>名称</label><input id="addName" placeholder="例: ダイニングテーブル120cm" /></div>
+      <div class="form-group"><label>数</label><input id="addCount" type="number" min="1" value="1" /></div>
+      <div class="form-group">
+        <label>状態</label>
+        <select id="addCondition"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="doAdd()">登録</button>
+      <div class="msg msg-success" id="addMsg"></div>
+    </div>
+
+    <!-- 削除タブ -->
+    <div class="tab-content" id="tab-delete">
+      <div class="loading" id="delLoading">読み込み中...</div>
+      <div class="table-wrap">
+        <table id="delTable" style="display:none;">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="delCheckAll" onchange="toggleAllDel(this.checked)" /></th>
+              <th>項目</th><th>品名</th><th>名称</th><th>ID</th><th>貸出状況</th>
+              <th>伝No</th><th>お客様名</th><th>貸出日</th><th>返却予定日</th>
+              <th>状態</th><th>店</th><th>担当</th>
+            </tr>
+          </thead>
+          <tbody id="delBody"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-danger" onclick="doDelete()" style="margin-top:12px;">選択した商品を削除</button>
+    </div>
+
+    <!-- 編集タブ -->
+    <div class="tab-content" id="tab-edit">
+      <div class="loading" id="editLoading">読み込み中...</div>
+      <div class="table-wrap">
+        <table id="editTable" style="display:none;">
+          <thead>
+            <tr>
+              <th>操作</th>
+              <th>項目</th><th>品名</th><th>名称</th><th>ID</th><th>貸出状況</th>
+              <th>伝No</th><th>お客様名</th><th>貸出日</th><th>返却予定日</th>
+              <th>状態</th><th>店</th><th>担当</th>
+            </tr>
+          </thead>
+          <tbody id="editBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 編集モーダル -->
+  <div class="overlay" id="editOverlay">
+    <div class="modal">
+      <h3>マスタ情報編集</h3>
+      <div class="form-group"><label>項目</label><input id="mItem" /></div>
+      <div class="form-group"><label>品名</label><input id="mProduct" /></div>
+      <div class="form-group"><label>名称</label><input id="mName" /></div>
+      <input type="hidden" id="mRow" />
+      <div class="modal-buttons">
+        <button class="btn btn-primary" onclick="doEditSave()">保存</button>
+        <button class="btn" style="background:#e8e8e8;" onclick="closeEditModal()">キャンセル</button>
+      </div>
+      <div class="msg msg-success" id="editModalMsg"></div>
+    </div>
+  </div>
+
+  <script>
+    var BASE_URL = '';
+    var allItems = [];
+
+    google.script.run.withSuccessHandler(function(url) {
+      BASE_URL = url;
+      document.getElementById('linkHome').href = url + '?page=adminHome&admin=1';
+    }).getAppUrl();
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(function(t, i) {
+        var names = ['add', 'delete', 'edit'];
+        t.classList.toggle('active', names[i] === name);
+      });
+      document.querySelectorAll('.tab-content').forEach(function(c) {
+        c.classList.toggle('active', c.id === 'tab-' + name);
+      });
+      if (name === 'delete' || name === 'edit') loadItems();
+    }
+
+    function loadItems() {
+      google.script.run.withSuccessHandler(function(items) {
+        allItems = items;
+        renderDeleteTab();
+        renderEditTab();
+      }).getAllItems();
+    }
+
+    /* --- 追加 --- */
+    function doAdd() {
+      var item = document.getElementById('addItem').value.trim();
+      var product = document.getElementById('addProduct').value.trim();
+      var name = document.getElementById('addName').value.trim();
+      var count = parseInt(document.getElementById('addCount').value) || 0;
+      var condition = document.getElementById('addCondition').value;
+      if (!item || !product || !name || count < 1) {
+        showMsg('addMsg', '全ての項目を入力してください', true);
+        return;
+      }
+      google.script.run.withSuccessHandler(function(ids) {
+        showMsg('addMsg', ids.length + '件登録しました: ' + ids.join(', '), false);
+        document.getElementById('addItem').value = '';
+        document.getElementById('addProduct').value = '';
+        document.getElementById('addName').value = '';
+        document.getElementById('addCount').value = '1';
+      }).withFailureHandler(function(e) {
+        showMsg('addMsg', 'エラー: ' + e.message, true);
+      }).addItems(item, product, name, count, condition);
+    }
+
+    /* --- 削除 --- */
+    function renderDeleteTab() {
+      document.getElementById('delLoading').style.display = 'none';
+      document.getElementById('delTable').style.display = 'table';
+      var tbody = document.getElementById('delBody');
+      tbody.innerHTML = '';
+      allItems.forEach(function(it) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><input type="checkbox" class="del-chk" data-row="' + it.row + '" /></td>' +
+          '<td>' + esc(it.item) + '</td><td>' + esc(it.product) + '</td>' +
+          '<td>' + esc(it.name) + '</td><td>' + esc(it.id) + '</td>' +
+          '<td>' + esc(it.status) + '</td><td>' + esc(it.slipNo) + '</td>' +
+          '<td>' + esc(it.customer) + '</td><td>' + esc(it.lendDate) + '</td>' +
+          '<td>' + esc(it.returnDate) + '</td><td>' + esc(it.condition) + '</td>' +
+          '<td>' + esc(it.shop) + '</td><td>' + esc(it.staff) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleAllDel(checked) {
+      document.querySelectorAll('.del-chk').forEach(function(c) { c.checked = checked; });
+    }
+
+    function doDelete() {
+      var rows = [];
+      document.querySelectorAll('.del-chk:checked').forEach(function(c) {
+        rows.push(parseInt(c.dataset.row));
+      });
+      if (rows.length === 0) { alert('削除する商品を選択してください'); return; }
+      if (!confirm(rows.length + '件の商品を削除しますか？')) return;
+      google.script.run.withSuccessHandler(function() {
+        alert('削除しました');
+        loadItems();
+      }).withFailureHandler(function(e) {
+        alert('エラー: ' + e.message);
+      }).deleteItemsByRows(rows);
+    }
+
+    /* --- 編集 --- */
+    function renderEditTab() {
+      document.getElementById('editLoading').style.display = 'none';
+      document.getElementById('editTable').style.display = 'table';
+      var tbody = document.getElementById('editBody');
+      tbody.innerHTML = '';
+      allItems.forEach(function(it) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><button class="btn btn-primary btn-sm" onclick="openEditModal(' + it.row + ')">編集</button></td>' +
+          '<td>' + esc(it.item) + '</td><td>' + esc(it.product) + '</td>' +
+          '<td>' + esc(it.name) + '</td><td>' + esc(it.id) + '</td>' +
+          '<td>' + esc(it.status) + '</td><td>' + esc(it.slipNo) + '</td>' +
+          '<td>' + esc(it.customer) + '</td><td>' + esc(it.lendDate) + '</td>' +
+          '<td>' + esc(it.returnDate) + '</td><td>' + esc(it.condition) + '</td>' +
+          '<td>' + esc(it.shop) + '</td><td>' + esc(it.staff) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openEditModal(row) {
+      var item = allItems.find(function(it) { return it.row === row; });
+      if (!item) return;
+      document.getElementById('mRow').value = row;
+      document.getElementById('mItem').value = item.item || '';
+      document.getElementById('mProduct').value = item.product || '';
+      document.getElementById('mName').value = item.name || '';
+      document.getElementById('editModalMsg').style.display = 'none';
+      document.getElementById('editOverlay').classList.add('active');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editOverlay').classList.remove('active');
+    }
+
+    function doEditSave() {
+      var row = parseInt(document.getElementById('mRow').value);
+      var item = document.getElementById('mItem').value.trim();
+      var product = document.getElementById('mProduct').value.trim();
+      var name = document.getElementById('mName').value.trim();
+      if (!item || !product || !name) {
+        showModalMsg('全ての項目を入力してください', true);
+        return;
+      }
+      google.script.run.withSuccessHandler(function(newId) {
+        closeEditModal();
+        loadItems();
+      }).withFailureHandler(function(e) {
+        showModalMsg('エラー: ' + e.message, true);
+      }).updateItemMaster(row, item, product, name);
+    }
+
+    /* --- ユーティリティ --- */
+    function showMsg(id, text, isError) {
+      var el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'msg ' + (isError ? 'msg-error' : 'msg-success');
+      el.style.display = 'block';
+    }
+
+    function showModalMsg(text, isError) {
+      var el = document.getElementById('editModalMsg');
+      el.textContent = text;
+      el.className = 'msg ' + (isError ? 'msg-error' : 'msg-success');
+      el.style.display = 'block';
+    }
+
+    function esc(v) {
+      if (v == null) return '';
+      var d = document.createElement('div');
+      d.appendChild(document.createTextNode(v));
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

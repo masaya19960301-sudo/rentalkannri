@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; }
+  .header { background: #4a90d9; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 18px; }
+  .header a { color: #fff; text-decoration: none; font-size: 14px; }
+  .container { max-width: 1200px; margin: 20px auto; padding: 0 12px; }
+  .table-wrap { overflow-x: auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
+  th { background: #4a90d9; color: #fff; padding: 10px 8px; white-space: nowrap; position: sticky; top: 0; }
+  td { padding: 9px 8px; border-bottom: 1px solid #eee; white-space: nowrap; }
+  tr:hover { background: #f8f9fb; }
+  .loading { text-align: center; padding: 40px; color: #999; }
+  .empty { text-align: center; padding: 40px; color: #999; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>履歴</h1>
+    <a href="#" id="linkHome">ホーム</a>
+  </div>
+  <div class="container">
+    <div class="table-wrap">
+      <div class="loading" id="loading">読み込み中...</div>
+      <table id="histTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>項目</th><th>品名</th><th>名称</th><th>ID</th><th>貸出状況</th>
+            <th>伝No</th><th>お客様名</th><th>貸出日</th><th>返却予定日</th>
+            <th>状態</th><th>店</th><th>担当</th><th>返却日</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    google.script.run.withSuccessHandler(function(url) {
+      document.getElementById('linkHome').href = url + '?page=adminHome&admin=1';
+    }).getAppUrl();
+
+    google.script.run.withSuccessHandler(function(rows) {
+      document.getElementById('loading').style.display = 'none';
+      if (rows.length === 0) {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('loading').textContent = '履歴データがありません';
+        return;
+      }
+      var table = document.getElementById('histTable');
+      table.style.display = 'table';
+      var tbody = document.getElementById('tbody');
+      rows.forEach(function(r) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + esc(r.item) + '</td>' +
+          '<td>' + esc(r.product) + '</td>' +
+          '<td>' + esc(r.name) + '</td>' +
+          '<td>' + esc(r.id) + '</td>' +
+          '<td>' + esc(r.status) + '</td>' +
+          '<td>' + esc(r.slipNo) + '</td>' +
+          '<td>' + esc(r.customer) + '</td>' +
+          '<td>' + esc(r.lendDate) + '</td>' +
+          '<td>' + esc(r.returnDate) + '</td>' +
+          '<td>' + esc(r.condition) + '</td>' +
+          '<td>' + esc(r.shop) + '</td>' +
+          '<td>' + esc(r.staff) + '</td>' +
+          '<td>' + esc(r.returnedDate) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }).withFailureHandler(function(e) {
+      document.getElementById('loading').textContent = 'エラー: ' + e.message;
+    }).getHistory();
+
+    function esc(v) {
+      if (v == null) return '';
+      var d = document.createElement('div');
+      d.appendChild(document.createTextNode(v));
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

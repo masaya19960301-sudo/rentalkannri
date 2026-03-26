@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; }
+  .header { background: #4a90d9; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .header h1 { font-size: 18px; }
+  .header-links a { color: #fff; text-decoration: none; font-size: 14px; margin-left: 16px; }
+  .container { max-width: 1200px; margin: 20px auto; padding: 0 12px; }
+  .table-wrap { overflow-x: auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
+  th { background: #4a90d9; color: #fff; padding: 10px 8px; white-space: nowrap; position: sticky; top: 0; }
+  td { padding: 9px 8px; border-bottom: 1px solid #eee; white-space: nowrap; }
+  tr:hover { background: #f8f9fb; }
+  .id-link { color: #4a90d9; text-decoration: underline; cursor: pointer; }
+  .status-rented { color: #d9534f; font-weight: 600; }
+  .status-available { color: #5cb85c; font-weight: 600; }
+  .loading { text-align: center; padding: 40px; color: #999; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>レンタル品一覧</h1>
+    <div class="header-links">
+      <? if (isAdmin) { ?>
+        <a href="#" id="linkHome">ホーム</a>
+      <? } else { ?>
+        <a href="#" id="linkLogin">ログイン</a>
+      <? } ?>
+    </div>
+  </div>
+  <div class="container">
+    <div class="table-wrap">
+      <div class="loading" id="loading">読み込み中...</div>
+      <table id="itemTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>項目</th><th>品名</th><th>名称</th><th>ID</th><th>貸出状況</th>
+            <th>伝No</th><th>お客様名</th><th>貸出日</th><th>返却予定日</th>
+            <th>状態</th><th>店</th><th>担当</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    var IS_ADMIN = <?= isAdmin ?>;
+    var BASE_URL = '';
+
+    google.script.run.withSuccessHandler(function(url) {
+      BASE_URL = url;
+      if (IS_ADMIN) {
+        var el = document.getElementById('linkHome');
+        if (el) el.href = url + '?page=adminHome&admin=1';
+      } else {
+        var el2 = document.getElementById('linkLogin');
+        if (el2) el2.href = url + '?page=login';
+      }
+    }).getAppUrl();
+
+    google.script.run.withSuccessHandler(renderTable).withFailureHandler(function(e) {
+      document.getElementById('loading').textContent = 'エラー: ' + e.message;
+    }).getAllItems();
+
+    function renderTable(items) {
+      document.getElementById('loading').style.display = 'none';
+      var table = document.getElementById('itemTable');
+      table.style.display = 'table';
+      var tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+      items.forEach(function(it) {
+        var tr = document.createElement('tr');
+        var statusClass = it.status === '貸出中' ? 'status-rented' : 'status-available';
+
+        var idCell;
+        if (IS_ADMIN) {
+          idCell = '<td><a class="id-link" href="' + BASE_URL + '?page=itemEdit&admin=1&row=' + it.row + '">' + esc(it.id) + '</a></td>';
+        } else {
+          idCell = '<td>' + esc(it.id) + '</td>';
+        }
+
+        tr.innerHTML =
+          '<td>' + esc(it.item) + '</td>' +
+          '<td>' + esc(it.product) + '</td>' +
+          '<td>' + esc(it.name) + '</td>' +
+          idCell +
+          '<td class="' + statusClass + '">' + esc(it.status) + '</td>' +
+          '<td>' + esc(it.slipNo) + '</td>' +
+          '<td>' + esc(it.customer) + '</td>' +
+          '<td>' + esc(it.lendDate) + '</td>' +
+          '<td>' + esc(it.returnDate) + '</td>' +
+          '<td>' + esc(it.condition) + '</td>' +
+          '<td>' + esc(it.shop) + '</td>' +
+          '<td>' + esc(it.staff) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function esc(v) {
+      if (v == null) return '';
+      var d = document.createElement('div');
+      d.appendChild(document.createTextNode(v));
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

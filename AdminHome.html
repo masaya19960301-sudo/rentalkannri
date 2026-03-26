@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; }
+  .header { background: #4a90d9; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 18px; }
+  .header a { color: #fff; text-decoration: none; font-size: 14px; }
+  .container { max-width: 800px; margin: 32px auto; padding: 0 16px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 28px 24px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; text-decoration: none; color: #333; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+  .card .icon { font-size: 36px; margin-bottom: 12px; }
+  .card .title { font-size: 16px; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>管理者ホーム</h1>
+    <a href="#" onclick="goLogin()">ログアウト</a>
+  </div>
+  <div class="container">
+    <div class="grid">
+      <a class="card" id="linkList">
+        <div class="icon">📋</div>
+        <div class="title">レンタル品一覧</div>
+      </a>
+      <a class="card" id="linkReturn">
+        <div class="icon">🔄</div>
+        <div class="title">返却処理</div>
+      </a>
+      <a class="card" id="linkDataEdit">
+        <div class="icon">✏️</div>
+        <div class="title">レンタル品データ編集</div>
+      </a>
+      <a class="card" id="linkHistory">
+        <div class="icon">📖</div>
+        <div class="title">履歴</div>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    google.script.run.withSuccessHandler(function(url) {
+      document.getElementById('linkList').href = url + '?page=itemList&admin=1';
+      document.getElementById('linkReturn').href = url + '?page=return&admin=1';
+      document.getElementById('linkDataEdit').href = url + '?page=dataEdit&admin=1';
+      document.getElementById('linkHistory').href = url + '?page=history&admin=1';
+    }).getAppUrl();
+
+    function goLogin() {
+      google.script.run.withSuccessHandler(function(url) {
+        window.top.location.href = url + '?page=login';
+      }).getAppUrl();
+    }
+  </script>
+</body>
+</html>

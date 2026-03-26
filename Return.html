@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; }
+  .header { background: #4a90d9; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 18px; }
+  .header a { color: #fff; text-decoration: none; font-size: 14px; }
+  .container { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 24px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; margin-bottom: 12px; color: #333; }
+  select, input[type="text"] { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; width: 100%; max-width: 400px; }
+  select:focus { border-color: #4a90d9; }
+  .table-wrap { overflow-x: auto; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
+  th { background: #4a90d9; color: #fff; padding: 10px 8px; white-space: nowrap; }
+  td { padding: 9px 8px; border-bottom: 1px solid #eee; white-space: nowrap; }
+  tr:hover { background: #f8f9fb; }
+  .btn { padding: 8px 18px; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; margin: 2px; }
+  .btn-primary { background: #4a90d9; color: #fff; }
+  .btn-primary:hover { background: #3a7bc8; }
+  .btn-success { background: #5cb85c; color: #fff; }
+  .btn-success:hover { background: #4cae4c; }
+  .btn-disabled { background: #ccc; color: #888; cursor: not-allowed; }
+  .btn-finish { background: #d9534f; color: #fff; padding: 12px 32px; font-size: 15px; margin-top: 16px; }
+  .btn-finish:hover { background: #c9302c; }
+  .done-label { color: #5cb85c; font-weight: 600; font-size: 13px; }
+  .unreturned-label { color: #f0ad4e; font-weight: 600; font-size: 13px; }
+
+  /* モーダル */
+  .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+  .overlay.active { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 28px 24px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { font-size: 16px; margin-bottom: 16px; }
+  .check-item { padding: 8px 0; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+  .check-item label { font-size: 13px; cursor: pointer; }
+  .modal .form-group { margin-top: 16px; }
+  .modal .form-group label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; }
+  .modal .form-group select { width: 120px; }
+  .modal-buttons { margin-top: 20px; display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>返却処理</h1>
+    <a href="#" id="linkHome">ホーム</a>
+  </div>
+
+  <div class="container">
+    <!-- ステップ1: お客様選択 -->
+    <div class="card">
+      <h2>お客様を選択</h2>
+      <select id="customerSelect">
+        <option value="">-- 選択してください --</option>
+      </select>
+    </div>
+
+    <!-- 商品一覧 -->
+    <div class="card" id="itemsCard" style="display:none;">
+      <h2>貸出商品一覧</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>品名</th><th>名称</th><th>ID</th><th>状態</th><th>未返却</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+      <div id="finishArea" style="display:none; margin-top: 20px; text-align: center;">
+        <button class="btn btn-finish" onclick="doFinish()">終了（返却処理を確定）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 点検モーダル -->
+  <div class="overlay" id="inspectOverlay">
+    <div class="modal">
+      <h3 id="inspectTitle">点検</h3>
+      <div id="inspectChecks"></div>
+      <div class="form-group">
+        <label>状態評価</label>
+        <select id="inspectCondition">
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+        </select>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-primary" onclick="saveInspect()">保存</button>
+        <button class="btn" style="background:#e8e8e8;" onclick="closeModal()">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var BASE_URL = '';
+    var rentedItems = [];
+    var processState = {}; // { row: { done: bool, unreturned: bool, condition: '' } }
+    var currentInspectRow = null;
+
+    var INSPECT_ITEMS = [
+      'クリーニング（汚れ、髪の毛、食べかすなどを除去）',
+      '異音確認（座面、背面）',
+      '異臭確認（生活臭などを除去）',
+      '動作確認',
+      '安全確認（ぐらつき等）',
+      'フェルトキーパー交換（脚等のフェルト）',
+      'パーツ確認（ネジ、ナットの不良チェック）',
+      '取説を現状確認シートへ添付'
+    ];
+
+    google.script.run.withSuccessHandler(function(url) {
+      BASE_URL = url;
+      document.getElementById('linkHome').href = url + '?page=adminHome&admin=1';
+    }).getAppUrl();
+
+    // お客様リスト取得
+    google.script.run.withSuccessHandler(function(customers) {
+      var sel = document.getElementById('customerSelect');
+      customers.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c.slipNo + '|||' + c.customer;
+        opt.textContent = c.label;
+        sel.appendChild(opt);
+      });
+    }).getRentedCustomers();
+
+    document.getElementById('customerSelect').addEventListener('change', function() {
+      var val = this.value;
+      if (!val) {
+        document.getElementById('itemsCard').style.display = 'none';
+        return;
+      }
+      var parts = val.split('|||');
+      google.script.run.withSuccessHandler(function(items) {
+        rentedItems = items;
+        processState = {};
+        items.forEach(function(it) {
+          processState[it.row] = { done: false, unreturned: false, condition: '' };
+        });
+        renderItems();
+        document.getElementById('itemsCard').style.display = 'block';
+      }).getRentedItemsByCustomer(parts[0], parts[1]);
+    });
+
+    function renderItems() {
+      var tbody = document.getElementById('itemsBody');
+      tbody.innerHTML = '';
+      rentedItems.forEach(function(it) {
+        var st = processState[it.row];
+        var tr = document.createElement('tr');
+
+        var actionHtml = '';
+        if (st.done) {
+          actionHtml = '<span class="done-label">点検済み</span>';
+        } else if (st.unreturned) {
+          actionHtml = '<span class="unreturned-label">未返却</span>';
+        } else {
+          actionHtml = '<button class="btn btn-primary" onclick="openInspect(' + it.row + ')">点検へ</button>';
+        }
+
+        var checkDisabled = st.done ? 'disabled' : '';
+        var checkChecked = st.unreturned ? 'checked' : '';
+
+        tr.innerHTML =
+          '<td>' + esc(it.product) + '</td>' +
+          '<td>' + esc(it.name) + '</td>' +
+          '<td>' + esc(it.id) + '</td>' +
+          '<td>' + esc(it.condition) + '</td>' +
+          '<td><input type="checkbox" ' + checkChecked + ' ' + checkDisabled + ' onchange="toggleUnreturned(' + it.row + ', this.checked)" /></td>' +
+          '<td>' + actionHtml + '</td>';
+        tbody.appendChild(tr);
+      });
+      checkAllDone();
+    }
+
+    function toggleUnreturned(row, checked) {
+      processState[row].unreturned = checked;
+      if (checked) processState[row].done = false;
+      renderItems();
+    }
+
+    function openInspect(row) {
+      currentInspectRow = row;
+      var item = rentedItems.find(function(it) { return it.row === row; });
+      document.getElementById('inspectTitle').textContent = '点検 - ' + (item ? item.id : '');
+      var container = document.getElementById('inspectChecks');
+      container.innerHTML = '';
+      INSPECT_ITEMS.forEach(function(label, i) {
+        var div = document.createElement('div');
+        div.className = 'check-item';
+        div.innerHTML = '<input type="checkbox" id="chk' + i + '" /><label for="chk' + i + '">' + esc(label) + '</label>';
+        container.appendChild(div);
+      });
+      document.getElementById('inspectCondition').value = 'A';
+      document.getElementById('inspectOverlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('inspectOverlay').classList.remove('active');
+      currentInspectRow = null;
+    }
+
+    function saveInspect() {
+      var condition = document.getElementById('inspectCondition').value;
+      var row = currentInspectRow;
+      google.script.run.withSuccessHandler(function() {
+        processState[row].done = true;
+        processState[row].condition = condition;
+        closeModal();
+        renderItems();
+      }).withFailureHandler(function(e) {
+        alert('エラー: ' + e.message);
+      }).saveInspection(row, condition);
+    }
+
+    function checkAllDone() {
+      var allProcessed = true;
+      for (var row in processState) {
+        var st = processState[row];
+        if (!st.done && !st.unreturned) { allProcessed = false; break; }
+      }
+      document.getElementById('finishArea').style.display = allProcessed && rentedItems.length > 0 ? 'block' : 'none';
+    }
+
+    function doFinish() {
+      if (!confirm('返却処理を確定しますか？')) return;
+      var items = [];
+      for (var row in processState) {
+        items.push({
+          row: parseInt(row),
+          unreturned: processState[row].unreturned,
+          condition: processState[row].condition
+        });
+      }
+      google.script.run.withSuccessHandler(function() {
+        window.top.location.href = BASE_URL + '?page=adminHome&admin=1';
+      }).withFailureHandler(function(e) {
+        alert('エラー: ' + e.message);
+      }).finishReturn(items);
+    }
+
+    function esc(v) {
+      if (v == null) return '';
+      var d = document.createElement('div');
+      d.appendChild(document.createTextNode(v));
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

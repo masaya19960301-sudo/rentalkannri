@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 40px 32px; width: 90%; max-width: 400px; text-align: center; }
+  .card h1 { font-size: 22px; color: #333; margin-bottom: 8px; }
+  .card p { color: #777; font-size: 14px; margin-bottom: 24px; }
+  .input-group { margin-bottom: 16px; }
+  .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; }
+  .input-group input:focus { border-color: #4a90d9; }
+  .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; margin-bottom: 10px; transition: background .2s; }
+  .btn-primary { background: #4a90d9; color: #fff; }
+  .btn-primary:hover { background: #3a7bc8; }
+  .btn-secondary { background: #e8e8e8; color: #333; }
+  .btn-secondary:hover { background: #d8d8d8; }
+  .error { color: #d9534f; font-size: 13px; margin-bottom: 12px; display: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>家具レンタル管理</h1>
+    <p>パスワードを入力してログインしてください</p>
+    <div class="input-group">
+      <input type="password" id="password" placeholder="パスワード" />
+    </div>
+    <div class="error" id="error">パスワードが正しくありません</div>
+    <button class="btn btn-primary" onclick="doAdminLogin()">管理者ログイン</button>
+    <button class="btn btn-secondary" onclick="doGuestLogin()">ゲストとして閲覧</button>
+  </div>
+
+  <script>
+    function doAdminLogin() {
+      var pw = document.getElementById('password').value;
+      if (!pw) { showError('パスワードを入力してください'); return; }
+      google.script.run
+        .withSuccessHandler(function(ok) {
+          if (ok) {
+            google.script.run.withSuccessHandler(function(url) {
+              window.top.location.href = url + '?page=adminHome&admin=1';
+            }).getAppUrl();
+          } else {
+            showError('パスワードが正しくありません');
+          }
+        })
+        .withFailureHandler(function(e) { showError('エラー: ' + e.message); })
+        .verifyPassword(pw);
+    }
+
+    function doGuestLogin() {
+      google.script.run.withSuccessHandler(function(url) {
+        window.top.location.href = url + '?page=itemList&admin=0';
+      }).getAppUrl();
+    }
+
+    function showError(msg) {
+      var el = document.getElementById('error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

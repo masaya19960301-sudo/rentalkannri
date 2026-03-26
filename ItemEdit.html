@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; }
+  .header { background: #4a90d9; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 18px; }
+  .header a { color: #fff; text-decoration: none; font-size: 14px; }
+  .container { max-width: 600px; margin: 24px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 28px 24px; }
+  .info { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee; }
+  .info span { display: inline-block; background: #e9f0fa; padding: 4px 10px; border-radius: 6px; margin: 2px 4px 2px 0; font-size: 13px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; font-weight: 600; }
+  .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+  .form-group input:focus { border-color: #4a90d9; }
+  .btn { padding: 12px 32px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; background: #4a90d9; color: #fff; }
+  .btn:hover { background: #3a7bc8; }
+  .msg { color: #5cb85c; font-size: 13px; margin-top: 8px; display: none; }
+  .loading { text-align: center; padding: 40px; color: #999; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>商品編集</h1>
+    <a href="#" id="linkBack">一覧に戻る</a>
+  </div>
+  <div class="container">
+    <div class="card">
+      <div class="loading" id="loading">読み込み中...</div>
+      <div id="formArea" style="display:none;">
+        <div class="info" id="infoArea"></div>
+        <div class="form-group"><label>伝No</label><input id="fSlipNo" /></div>
+        <div class="form-group"><label>お客様名</label><input id="fCustomer" /></div>
+        <div class="form-group"><label>貸出日</label><input id="fLendDate" type="date" /></div>
+        <div class="form-group"><label>返却予定日</label><input id="fReturnDate" type="date" /></div>
+        <div class="form-group"><label>店</label><input id="fShop" /></div>
+        <div class="form-group"><label>担当</label><input id="fStaff" /></div>
+        <button class="btn" onclick="save()">保存</button>
+        <div class="msg" id="msg">保存しました</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var ROW = <?= params.row || 0 ?>;
+    var BASE_URL = '';
+
+    google.script.run.withSuccessHandler(function(url) {
+      BASE_URL = url;
+      document.getElementById('linkBack').href = url + '?page=itemList&admin=1';
+    }).getAppUrl();
+
+    if (ROW > 0) {
+      google.script.run.withSuccessHandler(function(it) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('formArea').style.display = 'block';
+        document.getElementById('infoArea').innerHTML =
+          '<span>' + esc(it.item) + '</span>' +
+          '<span>' + esc(it.product) + '</span>' +
+          '<span>' + esc(it.name) + '</span>' +
+          '<span>' + esc(it.id) + '</span>' +
+          '<span>' + esc(it.status) + '</span>';
+        document.getElementById('fSlipNo').value = it.slipNo || '';
+        document.getElementById('fCustomer').value = it.customer || '';
+        document.getElementById('fLendDate').value = it.lendDate || '';
+        document.getElementById('fReturnDate').value = it.returnDate || '';
+        document.getElementById('fShop').value = it.shop || '';
+        document.getElementById('fStaff').value = it.staff || '';
+      }).withFailureHandler(function(e) {
+        document.getElementById('loading').textContent = 'エラー: ' + e.message;
+      }).getItemByRow(ROW);
+    }
+
+    function save() {
+      var data = {
+        slipNo: document.getElementById('fSlipNo').value,
+        customer: document.getElementById('fCustomer').value,
+        lendDate: document.getElementById('fLendDate').value,
+        returnDate: document.getElementById('fReturnDate').value,
+        shop: document.getElementById('fShop').value,
+        staff: document.getElementById('fStaff').value
+      };
+      google.script.run.withSuccessHandler(function() {
+        window.top.location.href = BASE_URL + '?page=itemList&admin=1';
+      }).withFailureHandler(function(e) {
+        alert('エラー: ' + e.message);
+      }).updateItemByRow(ROW, data);
+    }
+
+    function esc(v) {
+      if (v == null) return '';
+      var d = document.createElement('div');
+      d.appendChild(document.createTextNode(v));
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>
