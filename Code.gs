@@ -3,8 +3,14 @@
 // ============================================================
 
 /* ---------- 定数 ---------- */
+// ★ スクリプトプロパティが設定できない場合、下の '' 内にスプレッドシートIDを直接貼り付けてください
+var DIRECT_SPREADSHEET_ID = '';
+
 function getSpreadsheet() {
-  var id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  var id = DIRECT_SPREADSHEET_ID || PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  if (!id) {
+    throw new Error('スプレッドシートIDが設定されていません。Code.gs の DIRECT_SPREADSHEET_ID にIDを貼り付けるか、スクリプトプロパティ SPREADSHEET_ID を設定してください。');
+  }
   return SpreadsheetApp.openById(id);
 }
 function sheetRental()  { return getSpreadsheet().getSheetByName('レンタル品'); }
