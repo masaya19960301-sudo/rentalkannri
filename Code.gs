@@ -69,11 +69,16 @@ function getAllItems() {
     var status;
     // 貸出日が入っている場合、日付に応じて自動判定
     if (r[7]) {
-      var lendStr = formatDate(r[7]);
-      if (lendStr > today) {
-        status = '貸出予定';
+      if (r[7] instanceof Date) {
+        var lendStr = formatDate(r[7]);
+        if (lendStr > today) {
+          status = '貸出予定';
+        } else {
+          status = '貸出中';
+        }
       } else {
-        status = '貸出中';
+        // 日付でない文字列 → 予定が入っているので「貸出予定」
+        status = '貸出予定';
       }
     } else {
       status = '貸出可能';
