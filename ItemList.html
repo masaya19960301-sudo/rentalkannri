@@ -17,7 +17,8 @@
   th { background: #4a90d9; color: #fff; padding: 10px 8px; white-space: nowrap; position: sticky; top: 0; }
   td { padding: 9px 8px; border-bottom: 1px solid #eee; white-space: nowrap; }
   tr:hover { background: #f8f9fb; }
-  .id-link { color: #4a90d9; text-decoration: underline; cursor: pointer; }
+  .id-cell { font-size: 10px; }
+  .id-link { color: #4a90d9; text-decoration: underline; cursor: pointer; font-size: 10px; }
   .status-rented { color: #888; font-weight: 600; }
   .status-scheduled { color: #f0ad4e; font-weight: 600; }
   .status-available { background: #5cb85c; color: #fff; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-block; font-size: 12px; }
@@ -119,9 +120,9 @@
 
         var idCell;
         if (IS_ADMIN) {
-          idCell = '<td><a class="id-link" onclick="window.top.location.href=\'' + BASE_URL + '?page=itemEdit&admin=1&row=' + it.row + '\'; return false;" href="#">' + esc(it.id) + '</a></td>';
+          idCell = '<td class="id-cell"><a class="id-link" onclick="window.top.location.href=\'' + BASE_URL + '?page=itemEdit&admin=1&row=' + it.row + '\'; return false;" href="#">' + esc(it.id) + '</a></td>';
         } else {
-          idCell = '<td>' + esc(it.id) + '</td>';
+          idCell = '<td class="id-cell">' + esc(it.id) + '</td>';
         }
 
         tr.innerHTML =
