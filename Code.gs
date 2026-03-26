@@ -63,7 +63,7 @@ function getAllItems() {
   var sheet = sheetRental();
   var last = sheet.getLastRow();
   if (last < 2) return [];
-  var data = sheet.getRange(2, 1, last - 1, 12).getValues();
+  var data = sheet.getRange(2, 1, last - 1, 14).getValues();
   var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
   return data.map(function(r, i) {
     var status;
@@ -91,7 +91,9 @@ function getAllItems() {
       returnDate: formatDate(r[8]),// 返却予定日
       condition: r[9],  // 状態
       shop: r[10],      // 店
-      staff: r[11]      // 担当
+      staff: r[11],     // 担当
+      remarks: r[12] || '',    // M: 備考（商品に関する）
+      notes: r[13] || ''       // N: 特記事項（お客様に関する）
     };
   });
 }
@@ -112,7 +114,7 @@ function formatDate(v) {
    ============================================================ */
 function getItemByRow(row) {
   var sheet = sheetRental();
-  var r = sheet.getRange(row, 1, 1, 12).getValues()[0];
+  var r = sheet.getRange(row, 1, 1, 14).getValues()[0];
   return {
     row: row,
     item: r[0],
@@ -126,7 +128,9 @@ function getItemByRow(row) {
     returnDate: formatDate(r[8]),
     condition: r[9],
     shop: r[10],
-    staff: r[11]
+    staff: r[11],
+    remarks: r[12] || '',
+    notes: r[13] || ''
   };
 }
 
@@ -138,6 +142,8 @@ function updateItemByRow(row, data) {
   sheet.getRange(row, 9).setValue(data.returnDate);  // I: 返却予定日
   sheet.getRange(row, 11).setValue(data.shop);       // K: 店
   sheet.getRange(row, 12).setValue(data.staff);      // L: 担当
+  sheet.getRange(row, 13).setValue(data.remarks);    // M: 備考
+  sheet.getRange(row, 14).setValue(data.notes);      // N: 特記事項
   return true;
 }
 
@@ -183,13 +189,14 @@ function finishReturn(processedItems) {
     if (pi.unreturned) return; // 未返却はそのまま
 
     var row = pi.row;
-    var vals = sheet.getRange(row, 1, 1, 12).getValues()[0];
+    var vals = sheet.getRange(row, 1, 1, 14).getValues()[0];
 
-    // 履歴へ追記
+    // 履歴へ追記（備考・特記事項も含む）
     var histRow = [
       vals[0], vals[1], vals[2], vals[3], vals[4],
       vals[5], vals[6], formatDate(vals[7]), formatDate(vals[8]),
-      pi.condition || vals[9], vals[10], vals[11], today
+      pi.condition || vals[9], vals[10], vals[11], today,
+      vals[12] || '', vals[13] || ''
     ];
     histSheet.appendRow(histRow);
 
@@ -202,6 +209,8 @@ function finishReturn(processedItems) {
     sheet.getRange(row, 10).setValue(pi.condition || vals[9]); // J: 状態
     sheet.getRange(row, 11).setValue('');             // K: 店
     sheet.getRange(row, 12).setValue('');             // L: 担当
+    // M: 備考はクリアしない（商品固有の情報）
+    sheet.getRange(row, 14).setValue('');             // N: 特記事項をクリア
   });
 
   return true;
@@ -324,7 +333,7 @@ function addItems(item, product, name, count, condition) {
   var ids = getNextSeqNumbers(prefix, count);
   var sheet = sheetRental();
   ids.forEach(function(id) {
-    sheet.appendRow([item, product, name, id, '貸出可能', '', '', '', '', condition, '', '']);
+    sheet.appendRow([item, product, name, id, '貸出可能', '', '', '', '', condition, '', '', '', '']);
   });
   return ids;
 }
@@ -366,7 +375,7 @@ function getHistory() {
   var sheet = sheetHistory();
   var last = sheet.getLastRow();
   if (last < 2) return [];
-  var data = sheet.getRange(2, 1, last - 1, 13).getValues();
+  var data = sheet.getRange(2, 1, last - 1, 15).getValues();
   var result = data.map(function(r) {
     return {
       item: r[0],
@@ -381,7 +390,9 @@ function getHistory() {
       condition: r[9],
       shop: r[10],
       staff: r[11],
-      returnedDate: formatDate(r[12])
+      returnedDate: formatDate(r[12]),
+      remarks: r[13] || '',
+      notes: r[14] || ''
     };
   });
   // 返却日の新しい順
