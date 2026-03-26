@@ -64,14 +64,25 @@ function getAllItems() {
   var last = sheet.getLastRow();
   if (last < 2) return [];
   var data = sheet.getRange(2, 1, last - 1, 12).getValues();
+  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
   return data.map(function(r, i) {
+    var status = r[4];  // 貸出状況（シートの値）
+    // 貸出日が入っている場合、日付に応じて自動判定
+    if (status !== '貸出可能' && r[7]) {
+      var lendStr = formatDate(r[7]);
+      if (lendStr > today) {
+        status = '貸出予定';
+      } else {
+        status = '貸出中';
+      }
+    }
     return {
       row: i + 2,
       item: r[0],    // 項目
       product: r[1], // 品名
       name: r[2],    // 名称
       id: r[3],      // ID
-      status: r[4],  // 貸出状況
+      status: status, // 貸出状況（自動判定）
       slipNo: r[5],  // 伝No
       customer: r[6],// お客様名
       lendDate: formatDate(r[7]),  // 貸出日
@@ -135,7 +146,7 @@ function getRentedCustomers() {
   var items = getAllItems();
   var map = {};
   items.forEach(function(it) {
-    if (it.status === '貸出中') {
+    if (it.status === '貸出中' || it.status === '貸出予定') {
       var key = (it.slipNo || '') + '｜' + (it.customer || '');
       if (!map[key]) {
         map[key] = { slipNo: it.slipNo, customer: it.customer, label: it.slipNo + ' ' + it.customer };
@@ -150,7 +161,7 @@ function getRentedCustomers() {
 function getRentedItemsByCustomer(slipNo, customer) {
   var items = getAllItems();
   return items.filter(function(it) {
-    return it.status === '貸出中' && it.slipNo == slipNo && it.customer == customer;
+    return (it.status === '貸出中' || it.status === '貸出予定') && it.slipNo == slipNo && it.customer == customer;
   });
 }
 

@@ -14,8 +14,9 @@
   td { padding: 9px 8px; border-bottom: 1px solid #eee; white-space: nowrap; }
   tr:hover { background: #f8f9fb; }
   .id-link { color: #4a90d9; text-decoration: underline; cursor: pointer; }
-  .status-rented { color: #d9534f; font-weight: 600; }
-  .status-available { color: #5cb85c; font-weight: 600; }
+  .status-rented { color: #888; font-weight: 600; }
+  .status-scheduled { color: #f0ad4e; font-weight: 600; }
+  .status-available { background: #5cb85c; color: #fff; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-block; font-size: 12px; }
   .loading { text-align: center; padding: 40px; color: #999; }
 </style>
 </head>
@@ -73,7 +74,7 @@
       tbody.innerHTML = '';
       items.forEach(function(it) {
         var tr = document.createElement('tr');
-        var statusClass = it.status === '貸出中' ? 'status-rented' : 'status-available';
+        var statusClass = it.status === '貸出中' ? 'status-rented' : it.status === '貸出予定' ? 'status-scheduled' : 'status-available';
 
         var idCell;
         if (IS_ADMIN) {
