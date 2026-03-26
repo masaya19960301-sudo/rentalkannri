@@ -24,9 +24,9 @@
     <h1>レンタル品一覧</h1>
     <div class="header-links">
       <? if (isAdmin) { ?>
-        <a href="#" id="linkHome">ホーム</a>
+        <a href="#" onclick="goHome(); return false;">ホーム</a>
       <? } else { ?>
-        <a href="#" id="linkLogin">ログイン</a>
+        <a href="#" onclick="goLogin(); return false;">ログイン</a>
       <? } ?>
     </div>
   </div>
@@ -52,14 +52,14 @@
 
     google.script.run.withSuccessHandler(function(url) {
       BASE_URL = url;
-      if (IS_ADMIN) {
-        var el = document.getElementById('linkHome');
-        if (el) el.href = url + '?page=adminHome&admin=1';
-      } else {
-        var el2 = document.getElementById('linkLogin');
-        if (el2) el2.href = url + '?page=login';
-      }
     }).getAppUrl();
+
+    function goHome() {
+      window.top.location.href = BASE_URL + '?page=adminHome&admin=1';
+    }
+    function goLogin() {
+      window.top.location.href = BASE_URL + '?page=login';
+    }
 
     google.script.run.withSuccessHandler(renderTable).withFailureHandler(function(e) {
       document.getElementById('loading').textContent = 'エラー: ' + e.message;
@@ -77,7 +77,7 @@
 
         var idCell;
         if (IS_ADMIN) {
-          idCell = '<td><a class="id-link" href="' + BASE_URL + '?page=itemEdit&admin=1&row=' + it.row + '">' + esc(it.id) + '</a></td>';
+          idCell = '<td><a class="id-link" onclick="window.top.location.href=\'' + BASE_URL + '?page=itemEdit&admin=1&row=' + it.row + '\'; return false;" href="#">' + esc(it.id) + '</a></td>';
         } else {
           idCell = '<td>' + esc(it.id) + '</td>';
         }

@@ -20,7 +20,7 @@
 <body>
   <div class="header">
     <h1>履歴</h1>
-    <a href="#" id="linkHome">ホーム</a>
+    <a href="#" onclick="goHome(); return false;">ホーム</a>
   </div>
   <div class="container">
     <div class="table-wrap">
@@ -39,9 +39,14 @@
   </div>
 
   <script>
+    var BASE_URL = '';
     google.script.run.withSuccessHandler(function(url) {
-      document.getElementById('linkHome').href = url + '?page=adminHome&admin=1';
+      BASE_URL = url;
     }).getAppUrl();
+
+    function goHome() {
+      window.top.location.href = BASE_URL + '?page=adminHome&admin=1';
+    }
 
     google.script.run.withSuccessHandler(function(rows) {
       document.getElementById('loading').style.display = 'none';

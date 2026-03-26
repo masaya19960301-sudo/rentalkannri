@@ -45,7 +45,7 @@
 <body>
   <div class="header">
     <h1>レンタル品データ編集</h1>
-    <a href="#" id="linkHome">ホーム</a>
+    <a href="#" onclick="goHome(); return false;">ホーム</a>
   </div>
 
   <div class="container">
@@ -129,8 +129,11 @@
 
     google.script.run.withSuccessHandler(function(url) {
       BASE_URL = url;
-      document.getElementById('linkHome').href = url + '?page=adminHome&admin=1';
     }).getAppUrl();
+
+    function goHome() {
+      window.top.location.href = BASE_URL + '?page=adminHome&admin=1';
+    }
 
     function switchTab(name) {
       document.querySelectorAll('.tab').forEach(function(t, i) {

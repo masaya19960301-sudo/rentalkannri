@@ -24,7 +24,7 @@
 <body>
   <div class="header">
     <h1>商品編集</h1>
-    <a href="#" id="linkBack">一覧に戻る</a>
+    <a href="#" onclick="goBack(); return false;">一覧に戻る</a>
   </div>
   <div class="container">
     <div class="card">
@@ -49,8 +49,11 @@
 
     google.script.run.withSuccessHandler(function(url) {
       BASE_URL = url;
-      document.getElementById('linkBack').href = url + '?page=itemList&admin=1';
     }).getAppUrl();
+
+    function goBack() {
+      window.top.location.href = BASE_URL + '?page=itemList&admin=1';
+    }
 
     if (ROW > 0) {
       google.script.run.withSuccessHandler(function(it) {

@@ -23,37 +23,37 @@
   </div>
   <div class="container">
     <div class="grid">
-      <a class="card" id="linkList">
+      <div class="card" onclick="goTo('itemList')">
         <div class="icon">📋</div>
         <div class="title">レンタル品一覧</div>
-      </a>
-      <a class="card" id="linkReturn">
+      </div>
+      <div class="card" onclick="goTo('return')">
         <div class="icon">🔄</div>
         <div class="title">返却処理</div>
-      </a>
-      <a class="card" id="linkDataEdit">
+      </div>
+      <div class="card" onclick="goTo('dataEdit')">
         <div class="icon">✏️</div>
         <div class="title">レンタル品データ編集</div>
-      </a>
-      <a class="card" id="linkHistory">
+      </div>
+      <div class="card" onclick="goTo('history')">
         <div class="icon">📖</div>
         <div class="title">履歴</div>
-      </a>
+      </div>
     </div>
   </div>
 
   <script>
+    var BASE_URL = '';
     google.script.run.withSuccessHandler(function(url) {
-      document.getElementById('linkList').href = url + '?page=itemList&admin=1';
-      document.getElementById('linkReturn').href = url + '?page=return&admin=1';
-      document.getElementById('linkDataEdit').href = url + '?page=dataEdit&admin=1';
-      document.getElementById('linkHistory').href = url + '?page=history&admin=1';
+      BASE_URL = url;
     }).getAppUrl();
 
+    function goTo(page) {
+      window.top.location.href = BASE_URL + '?page=' + page + '&admin=1';
+    }
+
     function goLogin() {
-      google.script.run.withSuccessHandler(function(url) {
-        window.top.location.href = url + '?page=login';
-      }).getAppUrl();
+      window.top.location.href = BASE_URL + '?page=login';
     }
   </script>
 </body>
